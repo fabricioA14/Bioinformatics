@@ -1,0 +1,44 @@
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# This script is designed for LINUX CLUSTER environments.
+# It loads OBITools, filters sequences by length, and annotates them for further analysis.
+
+################################################################################
+# Step 1: Load Required Module for OBITools
+################################################################################
+
+# Load OBITools module from the cluster environment
+module load StdEnv OBITools/1.2.13-GCCcore-11.2.0
+
+################################################################################
+# Step 2: Filter Sequences by Length (Minimum 330bp)
+################################################################################
+
+# The `obigrep` command filters sequences based on a minimum length threshold.
+# Here, sequences shorter than 330bp are removed.
+obigrep -L 330 merged_demultiplexed.fastq > merged_assigned_Leray_330.fastq
+
+################################################################################
+# Step 3: Annotate Sequences with Sample Information
+################################################################################
+
+# The `obiannotate` command assigns metadata (e.g., sample names) to each sequence.
+obiannotate -k sample merged_assigned_Leray_330.fastq > merged_assigned_Leray_330_annotated.fastq
+
+################################################################################
+# Explanation of Commands:
+#
+# - `obigrep -L 330 input.fastq > output.fastq`  
+#   → Filters sequences, keeping only those with at least 330 base pairs.
+#
+# - `obiannotate -k sample input.fastq > output.fastq`  
+#   → Assigns sample metadata to each sequence for tracking.
+################################################################################
