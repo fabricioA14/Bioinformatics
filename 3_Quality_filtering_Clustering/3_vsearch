@@ -1,0 +1,53 @@
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# This script is designed for LINUX CLUSTER environments.
+# It loads VSEARCH, selects unique sequences from a pooled dataset, 
+# and sorts them based on size for further processing.
+
+################################################################################
+# Step 1: Load Required Module for VSEARCH
+################################################################################
+
+# Load VSEARCH for sequence clustering and quality filtering
+module load StdEnv VSEARCH/2.21.1-GCC-10.3.0
+
+################################################################################
+# Step 2: Select Unique Sequences
+################################################################################
+
+# The `vsearch --derep_fulllength` command removes duplicate sequences 
+# and retains only unique sequences that appear at least twice.
+vsearch --derep_fulllength pooled_upper.fasta \  # Input FASTA file
+        --output uniques_10.fasta \              # Output file with unique sequences
+        --minuniquesize 2 \                      # Keep only sequences occurring at least twice
+        --sizeout \                              # Append sequence abundance information
+        --fasta_width 0                          # Avoids line wrapping in the output FASTA file
+
+################################################################################
+# Step 3: Order Sequences by Abundance
+################################################################################
+
+# The `vsearch -sortbysize` command sorts sequences based on abundance,
+# ensuring the most abundant ones are processed first.
+vsearch -sortbysize uniques_10.fasta \  # Input file from the previous step
+        --output uniques_10_sorted.fasta \  # Output sorted sequences
+        -minseqlength 2                     # Ensure all sequences have at least 2bp
+
+################################################################################
+# Explanation of Commands:
+#
+# - `--derep_fulllength`  : Removes duplicate sequences, keeping only unique ones.
+# - `--minuniquesize 2`   : Keeps only sequences that appear at least twice.
+# - `--sizeout`           : Appends sequence abundance to the header.
+# - `--fasta_width 0`     : Ensures output FASTA is not wrapped for better readability.
+# - `-sortbysize`         : Sorts sequences from most to least abundant.
+# - `-minseqlength 2`     : Ensures all sequences have a minimum length of 2bp.
+################################################################################
