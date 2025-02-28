@@ -1,51 +1,67 @@
-#See if our package are installed in cluster (first step in cluster)
-#system.file(package=c('rBLAST'))
-#[1] "/home/fabricio/R/x86_64-pc-linux-gnu-library/4.3/rBLAST"  <- Installed
-#system.file(package=c('rBLAST'))
-#[1] ""                                                         <- Not installed
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
 
-library(plyr)
-#Install packages from CRAN
-pack <- c('dplyr', 'tibble','devtools')
-vars <- pack[!(pack %in% installed.packages()[, "Package"])]
-if (length(vars != 0)) {
-  install.packages(vars, dependencies = TRUE)
+# It installs and loads the required packages, prepares the working environment, 
+# and performs local BLAST analysis with taxonomic assignment.
+
+# Install packages from CRAN if missing
+required_packages <- c("plyr","dplyr", "tibble", "devtools", "readr")
+missing_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages, dependencies = TRUE)
 }
 
-
-#Install Biostrings from Bioconductor
-BiocManager::install(c("Biostrings"), force = T)
-if (!require("BiocManager", quietly = TRUE))
+# Install Biostrings from Bioconductor
+if (!requireNamespace("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
+}
+BiocManager::install("Biostrings", force = TRUE)
 
-#Install rBLAST from github
+# Install rBLAST from GitHub
 devtools::install_github("mhahsler/rBLAST")
 
-#Load all required packages
-pack <- c('dplyr', 'tibble','devtools','Biostrings','rBLAST')
-sapply(pack, require, character.only = TRUE)
+# Load all required packages
+all_packages <- c("dplyr", "tibble", "devtools", "Biostrings", "rBLAST", "readr")
+sapply(all_packages, require, character.only = TRUE)
 
-#Test
+################################################################################
+# Set Up Environment and Perform Local BLAST
+################################################################################
 
-#See the dirctory
-getwd()
-
-#set the directory
+# Set working directory
 setwd("/home/fabricio/rBlast")
 
-#Load our novaseq dataset
-dna <- readDNAStringSet('testID_ourdata.fasta', format='fasta')
+# Load dataset
+dna <- readDNAStringSet("testID_ourdata.fasta", format = "fasta")
 
-#Select our local database
-bl <- blast(db="/home/fabricio/rBlast/local_database/testID_database.fasta")
+# Select local database
+bl <- blast(db = "/home/fabricio/rBlast/local_database/testID_database.fasta")
 
-#Blast with local database
+# Run BLAST against the local database
 cl <- predict(bl, dna)
 
-#Separate only the max value of match per ZOTU
-cl.max <- cl %>% group_by(QueryID) %>% top_n(1,Perc.Ident)
+# Select only the best match (highest percentage identity) per ZOTU
+cl.max <- cl %>% group_by(QueryID) %>% top_n(1, Perc.Ident)
 
-#Blast with ID dataset
-Match <- match_df(ID, cl.max, on="SubjectID")
+# Match BLAST results with database IDs
+Match <- match_df(ID, cl.max, on = "SubjectID")
 Match <- cbind(QueryID = cl.max$QueryID, Match)
+
+################################################################################
+# Save Taxonomic Assignment Results
+################################################################################
+
+# Define output file name
+output_file <- "taxonomic_assignment.txt"
+
+# Save as tab-separated text file
+write_tsv(Match, file = output_file)
 
