@@ -1,0 +1,54 @@
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# This script is designed for LINUX CLUSTER environments.
+# It loads VSEARCH and generates OTU and ASV tables for further analysis.
+
+################################################################################
+# Step 1: Load Required Module for VSEARCH
+################################################################################
+
+# Load VSEARCH for generating ASV and OTU abundance tables
+module load StdEnv VSEARCH/2.21.1-GCC-10.3.0
+
+################################################################################
+# Step 2: Generate ASV Abundance Table
+################################################################################
+
+# The `vsearch --usearch_global` command maps reads to ASVs with 97% identity
+# and outputs an ASV abundance table.
+vsearch --usearch_global pooled_upper.fasta \  # Input file with all sequences
+        --id 0.97 \                            # Match sequences at 97% identity
+        --db ASVs/asvs.fasta \                 # ASV reference database
+        --otutabout ASVs/asv_table.txt         # Output ASV abundance table
+
+################################################################################
+# Step 3: Generate OTU Abundance Table
+################################################################################
+
+# The `vsearch --usearch_global` command maps reads to OTUs with 97% identity
+# and outputs an OTU abundance table.
+vsearch --usearch_global pooled_upper.fasta \  # Input file with all sequences
+        --id 0.97 \                            # Match sequences at 97% identity
+        --db OTUs/otus.fasta \                 # OTU reference database
+        --otutabout OTUs/otu_table.txt         # Output OTU abundance table
+
+################################################################################
+# Explanation of Commands:
+#
+# - `--usearch_global`  : Aligns query sequences against a reference database.
+# - `--id 0.97`         : Uses 97% identity threshold for assigning reads.
+# - `--db <file>`       : Specifies the reference database (ASVs or OTUs).
+# - `--otutabout`       : Generates a tab-delimited abundance table.
+#
+# The resulting tables can be used for taxonomic and ecological analyses.
+################################################################################
+
+echo "ASV and OTU tables generated successfully."
