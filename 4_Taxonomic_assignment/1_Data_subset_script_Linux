@@ -1,10 +1,26 @@
-#Uncompress archive
-tar –xvzf BOLD_Public.24-Feb-2023.tar.gz
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
 
-#Copy file to specific location
+# Example Script for Reproducibility: Subset of BOLD Database
+# This script is designed for LINUX systems and provides an example of a subset 
+# extraction from the BOLD database for reproducibility. It extracts a small portion 
+# of the dataset for testing.
+
+# Uncompress archive
+tar -xvzf BOLD_Public.24-Feb-2023.tar.gz
+
+# Copy file to specific location
 cp BOLD_Public.24-Feb-2023.tsv /home/fabricio/rBlast/local_database
 
-#Change archive name and extension
-mv BOLD_Public.24-Feb-2023.tsv  BOLD_Public.txt
+# Rename file and change extension
+mv /home/fabricio/rBlast/local_database/BOLD_Public.24-Feb-2023.tsv /home/fabricio/rBlast/local_database/BOLD_Public.txt
 
-sed -n '1,4000p' BOLD_Public.txt > local_database_raw.txt
+# Extract first 4000 lines to create a reproducible subset
+sed -n '1,4000p' /home/fabricio/rBlast/local_database/BOLD_Public.txt > /home/fabricio/rBlast/local_database/local_database_raw.txt
