@@ -1,94 +1,60 @@
-#Install packages from CRAN
-pack <- c('ape','data.table') #'adegenet'
-vars <- pack[!(pack %in% installed.packages()[, "Package"])]
-if (length(vars != 0)) {
-  install.packages(vars, dependencies = TRUE)
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Thorbek, L.; Schrøder-Nielsen, A.; Rosa, F.A.S.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# Load required packages (install missing ones if necessary)
+required_packages <- c("ape", "data.table")  
+missing_packages <- required_packages[!(required_packages %in% installed.packages()[, "Package"])]
+
+if (length(missing_packages) > 0) {
+  install.packages(missing_packages, dependencies = TRUE)
 }
 
-#Load all required packages
-sapply(pack, require, character.only = TRUE)
+sapply(required_packages, require, character.only = TRUE)
 
-#See the dirctory
+# Set Working Directory
 setwd("C:/Users/Alícya/Desktop/Taxonomic_assignment_novaseq/local_database")
-#setwd("/cluster/projects/nn9813k/Brazil/January_2023/NovaSeq/Sample_2-PL02-Leray/Final_Results/Taxonomic_assignment_novaseq/local_database")
 
-#Load our database 
-local_database <- fread("local_database_raw.txt", fill = T)
-#local_database <- fread("BOLD_Public.txt", fill = T)
+# Load Local Database
+local_database <- fread("local_database_raw.txt", fill = TRUE)
+local_database_filter <- local_database[, c(10:18, 52)]
 
-#select only relevant cols
-#local_database_filter_0 <- local_database[,c(10:18,52)] #BOLD_Public_A_1_1
-#local_database_filter_1 <- local_database[,c(10:18,52)] #BOLD_Public_A_1_2
-#local_database_filter_2 <- local_database[,c(10:18,52)] #BOLD_Public_A_2_1
-#local_database_filter_3 <- local_database[,c(10:18,52)] #BOLD_Public_A_2_2
-#local_database_filter_4 <- local_database[,c(10:18,52)] #BOLD_Public_B_1_1
-#local_database_filter_5 <- local_database[,c(10:18,52)] #BOLD_Public_B_1_2
-#local_database_filter_6 <- local_database[,c(10:18,52)] #BOLD_Public_B_2_1
-#local_database_filter_7 <- local_database[,c(10:18,52)] #BOLD_Public_B_2_2
+# Convert Local Database to FASTA Format
+local_database_fasta <- vector("list", nrow(local_database_filter))
+local_database_ID <- vector("list", nrow(local_database_filter))
+local_dna_fasta <- vector("list", nrow(local_database_filter))
 
-#sl <- object.size(local_database_filter)
-#print(sl, units = "MB", standard = "SI")
-
-#rm(local_database)
-
-#local_database_filter <- data.frame(rbind(local_database_filter_0,local_database_filter_1,local_database_filter_2,
-#                                          local_database_filter_3,local_database_filter_4,local_database_filter_5,
-#                                          local_database_filter_6,local_database_filter_7)) 
-
-#                                        rm(c(local_database_filter_0,local_database_filter_1,local_database_filter_2,
-#                                             local_database_filter_3,local_database_filter_4,local_database_filter_5,
-#                                             local_database_filter_6,local_database_filter_7))
-
-
-local_database_filter <- local_database[,c(10:18,52)]
-
-##Convert our local database: txt format >>> fasta format
-
-#Separate the Taxa identification
-local_database_fasta <- list()
-First_element <- c("Filled","only", "to", "create", "a", "vector")
-Second_element <- c("Filled","only", "to", "create", "a", "vector")
-for (i in seq(nrow(local_database_filter))) {
-First_element <- ">"
-Second_element[i] <- paste0(c(local_database_filter[i,1:9]), sep = ",", collapse = "")
-Second_element[i] <- substr(Second_element[i], 1, nchar(Second_element[i])-1)
-local_database_fasta[[i]] <- capture.output(cat(cat(First_element, Second_element[i])))
+for (i in seq_len(nrow(local_database_filter))) {
+  local_database_fasta[[i]] <- paste0(">", paste(local_database_filter[i, 1:9], collapse = ","))
+  local_database_ID[[i]] <- paste0(">ID-", i)
+  local_dna_fasta[[i]] <- tolower(as.character(local_database_filter[i, 10]))
 }
 
-#Separate the IDs + Taxa identification
-ID <- data.frame(SubjectID = paste("ID-", seq(local_database_fasta), sep = ""), Taxa_Identification = Second_element)
+# Save ID and Taxa Identifications
+ID_table <- data.frame(
+  SubjectID = paste0("ID-", seq_along(local_database_fasta)),
+  Taxa_Identification = unlist(local_database_fasta)
+)
 
-write.table(ID, file = "ID_taxa.txt", sep = " ", row.names = F, col.names = T)
+write.table(ID_table, file = "ID_taxa.txt", sep = " ", row.names = FALSE, col.names = TRUE, quote = FALSE)
 
-#Create a Id to concatenate with our sequences
-local_database_ID <- list()
-Second_element <- c("Filled","only", "to", "create", "a", "vector")
-for (i in seq(nrow(local_database_filter))) {
-  Second_element[i] <-  paste(">ID-", i, sep = "")
-  local_database_ID[[i]] <- capture.output(cat(cat(Second_element[i])))
-}
+# Merge headers and sequences into FASTA format
+local_database_ID_fasta <- c(local_database_ID, local_dna_fasta)
 
-#Separate the DNA sequences
-local_dna_fasta <- list()
-Third_element <- c("Filled","only", "to", "create", "a", "vector")
-for (i in seq(nrow(local_database_filter))) {
-  Third_element[i] <- paste0(c(local_database_filter[i,10]), sep = "", collapse = "")
-  local_dna_fasta[[i]] <- capture.output(cat(Third_element[i]))
-}
+write.table(
+  unlist(local_database_ID_fasta),
+  file = "testID_database.fasta",
+  sep = "\n", row.names = FALSE, col.names = FALSE, quote = FALSE
+)
 
-#Merge the taxa names + sequences (In fasta format)
-#local_database_TAXA_fasta <- list(local_database_fasta,tolower(local_dna_fasta))
-
-#Merge the taxa names + sequences
-local_database_ID_fasta <- list(local_database_ID,tolower(local_dna_fasta))
-
-write.table(sapply(local_database_ID_fasta,"[",c(1:length(local_database_ID_fasta[[1]]))),
-            file = "testID_database.fasta", sep = "\n", eol = "\n", row.names = F, col.names = F,
-            qmethod = "escape", quote = F)
-
-#To see if the fasta sequences are being imported correctly (OPTIONAL)
-#obj <- fasta2DNAbin("testID.fasta", chunk=10)
-
-#Create a local database - Linux (MANDATORY)
-#makeblastdb -in testID_database.fasta -parse_seqids -blastdb_version 5 -title "test" -dbtype nucl
-
+################################################################################
+# Create Local BLAST Database (Linux)
+################################################################################
+# Run this command in the terminal:
+# makeblastdb -in testID_database.fasta -parse_seqids -blastdb_version 5 -title "test" -dbtype nucl
