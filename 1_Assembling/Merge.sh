@@ -2,7 +2,7 @@
 # Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
 # Across Habitats Using eDNA Metabarcoding
 #
-# Authors: Anmarkrud, J.A.; Thorbek, L.; Schrøder-Nielsen, A.; Rosa, F.A.S.; Melo, S.;
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
 # Ready, J.S.; de Boer, H.; Mauvisseau, Q.
 #
 # Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
