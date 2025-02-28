@@ -1,0 +1,61 @@
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# This script is designed for LINUX CLUSTER environments.
+# It loads OBITools and USEARCH, splits FASTQ files by sample, 
+# processes them using USEARCH, and merges sequences into a final FASTA file.
+
+################################################################################
+# Step 1: Load Required Modules
+################################################################################
+
+# Load OBITools for metabarcoding data processing
+module load StdEnv OBITools/1.2.13-GCCcore-11.2.0
+
+# Load USEARCH for sequence filtering and quality control
+module load StdEnv USEARCH/11.0.667-i86linux32
+
+################################################################################
+# Step 2: Split FASTQ Files by Sample
+################################################################################
+
+# The `obisplit` command separates a multi-sample FASTQ file into individual sample files.
+obisplit -t sample /Path/to/file/merged_assigned_Leray_330_annotated.fastq
+
+################################################################################
+# Step 3: Quality Filtering and Conversion with USEARCH
+################################################################################
+
+# Loop through each FASTQ file and apply filtering with USEARCH
+for fq in *.fastq; do
+    usearch -fastq_filter "$fq" \
+            -fastq_maxee 1 \       # Maximum expected error threshold = 1
+            -fastq_minlen 100 \     # Minimum sequence length = 100bp
+            -fastq_maxns 0 \        # No ambiguous nucleotides (Ns) allowed
+            -relabel "$fq." \       # Rename sequences using the filename as prefix
+            -fastaout "$fq.fasta"   # Output in FASTA format
+done
+
+################################################################################
+# Step 4: Merge FASTA Files and Convert to Uppercase
+################################################################################
+
+# Concatenate all FASTA files and convert sequences to uppercase
+cat *fastq.fasta | tr '[:lower:]' '[:upper:]' > pooled_upper.fasta
+
+################################################################################
+# Step 5: Clean Up Temporary Files
+################################################################################
+
+# Remove all FASTQ files
+rm -f *.fastq
+
+# Remove all FASTA files except the final pooled_upper.fasta
+find . -maxdepth 1 -type f -name "*.fasta" ! -name "pooled_upper.fasta" -delete
