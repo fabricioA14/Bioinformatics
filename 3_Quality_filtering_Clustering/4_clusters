@@ -1,0 +1,79 @@
+################################################################################
+# Impacts of Replicates, Polymerase, and Amplicon Size on Unraveling Species Richness
+# Across Habitats Using eDNA Metabarcoding
+#
+# Authors: Anmarkrud, J.A.; Rosa, F.A.S.; Thorbek, L.; Schrøder-Nielsen, A.; Melo, S.;
+# Ready, J.S.; de Boer, H.; Mauvisseau, Q.
+#
+# Corresponding Author: Quentin Mauvisseau - quentin.mauvisseau@nhm.uio.no
+################################################################################
+
+# This script is designed for LINUX CLUSTER environments.
+# It loads USEARCH and VSEARCH, generates ASVs and OTUs, and filters 
+# sequences for further biodiversity analysis.
+
+################################################################################
+# Step 1: Load Required Modules
+################################################################################
+
+# Load USEARCH for denoising amplicon sequence variants (ASVs)
+module load StdEnv USEARCH/11.0.667-i86linux32
+
+# Load VSEARCH for OTU clustering
+module load StdEnv VSEARCH/2.21.1-GCC-10.3.0
+
+################################################################################
+# Step 2: Generate ASVs (Amplicon Sequence Variants)
+################################################################################
+
+# Create ASVs directory if it does not exist
+mkdir -p ASVs
+
+# Run USEARCH unoise3 to generate ASVs
+usearch -unoise3 uniques_10_sorted.fasta \  # Input file with unique sequences
+        -zotus ASVs/asvs.fasta \           # Output file with ASVs
+        -tabbedout unoise3_10.txt \        # Save denoising statistics
+        -relabel Asv \                     # Rename sequences with "Asv" prefix
+        -minsize 2                         # Keep only sequences appearing at least twice
+
+################################################################################
+# Step 3: Perform OTU Clustering
+################################################################################
+
+# Create OTUs directory if it does not exist
+mkdir -p OTUs
+
+# Define temporary file variable for OTU centroids
+temp_file="OTUs/otus_temp.fasta"
+
+# Run VSEARCH to cluster OTUs at 97% similarity
+vsearch --cluster_fast uniques_10_sorted.fasta \  # Input file
+        --id 0.97 \                               # OTU clustering at 97% identity
+        --centroids "$temp_file" \                # Temporary output for OTU centroids
+        --relabel Otu                             # Rename sequences with "Otu" prefix
+
+################################################################################
+# Step 4: Filter Clusters with Only One Member
+################################################################################
+
+# Remove single-member clusters and save final OTU output
+awk '/^>/{if (NR>1) printf "\\n"; printf "%s\\n", $0; next}{printf "%s", $0} END {printf "\\n"}' \
+    "$temp_file" > OTUs/otus.fasta
+
+# Remove temporary file
+rm -f "$temp_file"
+
+################################################################################
+# Explanation of Commands:
+#
+# - `usearch -unoise3`  : Performs denoising to generate ASVs.
+# - `-zotus`           : Saves ASV sequences to a FASTA file.
+# - `-tabbedout`       : Outputs denoising statistics.
+# - `-relabel Asv`     : Renames ASVs with the "Asv" prefix.
+# - `-minsize 2`       : Keeps sequences that appear at least twice.
+#
+# - `vsearch --cluster_fast`  : Performs OTU clustering.
+# - `--id 0.97`               : Defines a 97% similarity threshold for OTUs.
+# - `--centroids`             : Saves representative OTU sequences.
+# - `awk` command             : Ensures properly formatted OTU FASTA output.
+################################################################################
